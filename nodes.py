@@ -31,7 +31,7 @@ class Node:
                 self.send_key_port()
                 #while True:
                 #       conn, addr = self.node.accept()
-                #       print("Connected with " + addr[0] + " : " + str(addr[1]$
+                #       print("Connected with " + addr[0] + " : " + str(addr[1]))
                 
 for i in range(3):
         Thread(target = Node('localhost', ports[i]).mainloop).start()
