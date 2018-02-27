@@ -1,3 +1,2 @@
 # Onion-Networking
-Simulation of Onion Networking
-(Unfinished)
+Simulation of Onion Networking (Unfinished)
