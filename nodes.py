@@ -24,8 +24,10 @@ class Node:
         def send_key_port(self):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(('localhost', DIRPORT))
-                s.send("onionnode###" + self.send_publickey + "###" + str(self.port))
-                print("sending")
+                s.send("sendkeys###" + self.send_publickey + "###" + str(self.port))
+                print("sending send keys")
+                s.send("returnkeys###" + self.return_publickey + "###" + str(self.port))
+                print("sending return keys")
                 s.close()
 
         def mainloop(self):
