@@ -16,8 +16,10 @@ class Node:
 
         def make_keys(self):
                 new_key = RSA.generate(1024)
-                self.publickey = new_key.publickey().exportKey('PEM')
-                self.privatekey = new_key.exportKey('PEM')
+                self.send_publickey = new_key.publickey().exportKey('PEM')
+                self.send_privatekey = new_key.exportKey('PEM')
+                self.return_publickey = new_key.publickey().exportKey('PEM')
+                self.return_privatekey = new_key.exportKey('PEM')
 
         def send_key_port(self):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
