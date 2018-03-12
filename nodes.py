@@ -24,7 +24,7 @@ class Node:
         def send_key_port(self):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(('localhost', DIRPORT))
-                s.send("onionnode###" + self.publickey + "###" + str(self.port))
+                s.send("onionnode###" + self.send_publickey + "###" + str(self.port))
                 print("sending")
                 s.close()
 
