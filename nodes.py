@@ -1,6 +1,7 @@
 import socket
 from Crypto.PublicKey import RSA
 from threading import Thread
+from base64 import b64decode
 
 DIRPORT = 6668
 ports = [6555, 6444, 6333]
@@ -22,6 +23,13 @@ class Node:
                 self.return_publickey = new_returnkey.publickey().exportKey('PEM')
                 self.return_privatekey = new_returnkey.exportKey('PEM')
 
+         def decrypt(self, message):
+                raw_data = b64decode(message)
+                decrypted = self.return_key.decrypt(raw_data)
+                print decrypted
+                return decypted
+
+                
         def send_key_port(self):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(('localhost', DIRPORT))
