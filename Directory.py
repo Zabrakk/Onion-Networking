@@ -23,13 +23,10 @@ def client_thread(conn):
                 elif data.startswith("sendkeys"):
                         data = data.split("###")
                         send_keys.append(data[1:3])
-                        print  send_keys
-                        print
+
                 elif data.startswith("returnkeys"):
                         data = data.split("###")
                         return_keys.append(data[1:3])
-                        print return_keys
-                        print
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('localhost', 6668))
