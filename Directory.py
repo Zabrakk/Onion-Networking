@@ -9,21 +9,28 @@ send_keys = []
 return_keys = []
 
 def choose_order():
-        num = random.randint(0, (len(servers) - 1))
-        keys = servers[num][0] + "###" + servers[num][1]
-        servers.remove(servers[num])
+        if  action == "send":
+                num = random.randint(0, (len(send_keys) - 1))
+                keys = send_keys[num][0] + "###" + send_keys[num][1]
+                send_keys.remove(send_keys[num])
+        elif action == "return":
+                num = random.randint(0, (len(return_keys) -1))
+                keys = return_keys[num][0] + "###" + return_keys[num][1]
+                return_keys.remove(return_keys[num])
         print keys
         return keys
+
 
 def client_thread(conn):
         while True:
                 data = str(conn.recv(1024))
                 if str(data) == "gimmekeys":
-                        conn.send(choose_order())
+                        conn.send(choose_order("send"))
+                elif str(data) == "sendreturn":
+                        conn.send(choose_order("return"))
                 elif data.startswith("sendkeys"):
                         data = data.split("###")
                         send_keys.append(data[1:3])
-
                 elif data.startswith("returnkeys"):
                         data = data.split("###")
                         return_keys.append(data[1:3])
