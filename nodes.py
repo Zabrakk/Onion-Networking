@@ -13,26 +13,35 @@ class Node:
                 self.publickey = ""
                 self.privatekey = ""
                 self.port = port
-
+                
         def make_keys(self):
-                new_key = RSA.generate(1024)
-                self.send_publickey = new_key.publickey().exportKey('PEM')
-                self.send_privatekey = new_key.exportKey('PEM')
-                self.return_publickey = new_key.publickey().exportKey('PEM')
-                self.return_privatekey = new_key.exportKey('PEM')
+                new_sendkey = RSA.generate(1024)
+                new_returnkey = RSA.generate(1024)
+                self.send_publickey = new_sendkey.publickey().exportKey('PEM')
+                self.send_privatekey = new_sendkey.exportKey('PEM')
+                self.return_publickey = new_returnkey.publickey().exportKey('PEM')
+                self.return_privatekey = new_returnkey.exportKey('PEM')
 
         def send_key_port(self):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect(('localhost', DIRPORT))
                 s.send("sendkeys###" + self.send_publickey + "###" + str(self.port))
                 print("sending send keys")
-                s.send("returnkeys###" + self.return_publickey + "###" + str(self.port))
-                print("sending return keys")
                 s.close()
+                
+        def return_key(self):
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(('localhost', DIRPORT))
+                s.send("returnkeys###" + self.return_publickey + "###" + str(self.port))
+                print "sending return keys"
+                s.close()
+
+
 
         def mainloop(self):
                 self.make_keys()
                 self.send_key_port()
+                self.return_key()
                 #while True:
                 #       conn, addr = self.node.accept()
                 #       print("Connected with " + addr[0] + " : " + str(addr[1]))
