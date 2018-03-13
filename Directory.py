@@ -12,7 +12,7 @@ def choose_order():
         num = random.randint(0, (len(servers) - 1))
         keys = servers[num][0] + "###" + servers[num][1]
         servers.remove(servers[num])
-        print(keys)
+        print keys
         return keys
 
 def client_thread(conn):
@@ -23,18 +23,21 @@ def client_thread(conn):
                 elif data.startswith("sendkeys"):
                         data = data.split("###")
                         send_keys.append(data[1:3])
-                elif data.strtswith("returnkeys"):
+                        print  send_keys
+                        print
+                elif data.startswith("returnkeys"):
                         data = data.split("###")
                         return_keys.append(data[1:3])
-                        
+                        print return_keys
+                        print
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('localhost', 6668))
-server.listen(4)
+server.listen(5)
 
 while 1:
         conn, addr = server.accept()
-        print ('Connected from: ' + addr[0] + ':' + str(addr[1]))
+        print 'Connected from: ' + addr[0] + ':' + str(addr[1])
         start_new_thread(client_thread, (conn,))
 
 server.close()
