@@ -1,58 +1,98 @@
 import socket
-from Crypto.PublicKey import RSA
+import time
+from diffiesecret import *
+from AES_func import AES_func
 from threading import Thread
-from Crypto.Cipher import AES
-import random
-import string
+from random import randint
 
-DIRPORT = 6667
-ports = [6555, 6444, 6333]
+#Connection config
+HOST = "localhost"
+DIR_PORT = 6677 #Directories port
+NODES = [] #List of nodes
+
+#Functions in the node class are called in the order they are presented in the code
+#except for loop()
 
 class Node:
-        def __init__(self, host, port):
-                self.node = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.node.bind((host, port))
-                self.node.listen(10)
-                self.send_publickey = ""
-                self.port = port
-                #AES
-                self.key = random.choice(string.letters) * 16
-                self.IV = 16 * '\x00'
-                self.mode = AES.MODE_CBC
-                self.encryptor = AES.new(self.key, self.mode, IV=self.IV)
+	def __init__(self): #Initialization of the node object
+		print("Node starting")
+		self.AES = AES_func()
+		self.SECRET = randint(1, 100)
+		self.DIR_KEY = 0
+		self.COMM_KEY = 0
+		self.PORT = 0
+		self.PREV_PORT = 0
+		self.NEXT_PORT = 0
+		self.DIR_exchange()
 
-        def make_keys(self):
-                new_sendkey = RSA.generate(1024)
-                new_returnkey = RSA.generate(1024)
-                self.send_publickey = new_sendkey.publickey().exportKey('PEM')
-                self.send_privatekey = new_sendkey.exportKey('PEM')
-                self.return_publickey = new_returnkey.publickey().exportKey('PEM')
-                self.return_privatekey = new_returnkey.exportKey('PEM')
+	def create_socket(self):
+		'''Look at the other files :) '''
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		return sock
 
-        def decrypt(self, message):
-                decryptor = AES.new(self.key, self.mode, IV=self.IV)
-                return str(decryptor.decrypt(message))
+	def DIR_exchange(self):
+		'''
+		Input: None
+		Output: None
+		Perfoms DH key exchange, creates an AES key with DH result
+		Uses the key to decrypt the other part of the message containing the nodes port
+		'''
+		sock = self.create_socket()
+		sock.connect((HOST, DIR_PORT))
 
-        def send_key_port(self):
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(('localhost', DIRPORT))
-                s.send("send_key###" + self.send_publickey + "###" + str(self.port))
-                print("sending send keys")
-                s.close()
+		sock.send(calculate_shared(self.SECRET).encode("utf-8"))
+		answer = sock.recv(1024).split("###")
+		self.DIR_KEY = calculate_secret(answer[0], self.SECRET)
+		self.DIR_KEY = self.AES.DF_keygen(self.DIR_KEY)
+		self.PORT = int(self.AES.decrypt(answer[1], self.DIR_KEY))
+		print(self.DIR_KEY) #Debug prints
+		print(self.PORT)
+		sock.close()
 
-        def return_key(self):
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(('localhost', DIRPORT))
-                s.send("return_key###" + self.return_publickey + "###" + str(self.port))
+	def get_comm_key(self):
+		'''
+		Input: None
+		Output: None
+		Connects to directory, recieves return and fowarding ports and an AES key used for communication
+		between nodes, client and server
+		'''
+		sock = self.create_socket()
+		sock.bind((HOST, self.PORT))
+		sock.listen(2) #1
+		conn, addr = sock.accept()
 
+		answer = self.AES.decrypt(conn.recv(1024), self.DIR_KEY) #Encryption key, to, from
+		self.COMM_KEY, self.NEXT_PORT, self.PREV_PORT = answer.split("###")
+		print(self.COMM_KEY, self.NEXT_PORT, self.PORT, self.PREV_PORT)
 
-        def mainloop(self):
-                self.make_keys()
-                self.send_key_port()
-                #self.return_key()
-                #while True:
-                #       conn, addr = self.node.accept()
-                #       print("Connected with " + addr[0] + " : " + str(addr[1]))
+	def listener(self):
+		'''
+		Input: None
+		Output: None
+		Fowarding and returnin the message
+		Does encryption and decryption based on message direction
+		'''
+		server = self.create_socket()
+		server.bind((HOST, self.PORT))
+		server.listen(3)
+		conn, addr = server.accept()
+		msg = self.AES.decrypt(conn.recv(1024), self.COMM_KEY).split("###")
+		print(msg)
+		time.sleep(1)
+		client = self.create_socket()
+		if len(msg) == 1:
+			client.connect((HOST, int(self.NEXT_PORT)))
+		else:
+			client.connect((HOST, int(msg[len(msg)-1])))
+		client.send(msg[0].encode('utf-8'))
+		answer = self.AES.encrypt(client.recv(1024),self.COMM_KEY)
+		client.close()
+		conn.send(answer.encode('utf-8'))
 
-for i in range(3):
-        Thread(target = Node('localhost', ports[i]).mainloop).start()
+	def main(self):
+		self.get_comm_key()
+		self.listener()
+
+for i in range(3): #Start 3 nodes
+	Thread(target = Node().main).start()
